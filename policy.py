@@ -1,14 +1,4 @@
-"""
-The definitive registry loaded by the safety engine at runtime.
-If the strategist suggests an action not in allowed_actions for a given
-root cause, the safety engine falls back to the first allowed action
-instead of executing an unapproved action.
-
-Every RootCauseType value from schemas.py must have an entry here --
-the assert below fails loudly at import time if one is missing, instead
-of a KeyError mid-batch during the demo.
-"""
-
+### this file is used to set the allowed actions for each root cause type, and the max retries 
 from schemas import RecoveryPolicy, RootCauseType
 import typing
 
@@ -45,11 +35,6 @@ POLICY_REGISTRY: dict[str, RecoveryPolicy] = {
     ),
     "mandate_failed": RecoveryPolicy(
         root_cause="mandate_failed",
-        # WhatsApp nudge is preferred (matches the strategist's ladder), with
-        # email as a compliant fallback for customers who opted out of
-        # WhatsApp, and escalation as the last resort -- NOT
-        # silent_gateway_retry, which doesn't help when the customer never
-        # confirmed the mandate at all
         allowed_actions=["send_whatsapp_payment_link", "send_email_payment_link", "escalate_to_human"],
         max_retries=2,
         requires_human_approval=False,
