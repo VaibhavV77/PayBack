@@ -6,7 +6,7 @@ queryable pointer into the full trail for that case.
 """
 
 from schemas import RecoveryState
-from policy import POLICY_REGISTRY, CHANNEL_FOR_ACTION
+from policy import get_policy, CHANNEL_FOR_ACTION
 from llm_client import diagnose, strategize
 import gateway_sim
 import audit
@@ -48,7 +48,7 @@ def strategist_node(state: RecoveryState) -> dict:
 
 def safety_engine_node(state: RecoveryState) -> dict:
     root_cause = state.diagnosis.root_cause_category
-    policy = POLICY_REGISTRY[root_cause]
+    policy = get_policy(root_cause)
     action = state.strategy.recommended_action
     ids = list(state.audit_log_ids)
 
@@ -129,7 +129,7 @@ def executor_node(state: RecoveryState) -> dict:
 
 
 def verify_node(state: RecoveryState) -> dict:
-    policy = POLICY_REGISTRY[state.diagnosis.root_cause_category]
+    policy = get_policy(state.diagnosis.root_cause_category)
     ids = list(state.audit_log_ids)
 
     if state.outcome.payment_succeeded:

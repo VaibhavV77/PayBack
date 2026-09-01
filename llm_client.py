@@ -17,14 +17,23 @@ Few-shot exemplars and system prompts live in prompts.py, not here.
 
 import json
 import os
+import time
+from tenacity import retry, retry_if_exception_type, wait_exponential, stop_after_attempt
+from langchain_google_genai.chat_models import GoogleRateLimitError
+from dotenv import load_dotenv
 from schemas import DiagnoserOutput, StrategistOutput, NormalizedFailureEvent
 from policy import CHANNEL_FOR_ACTION
 from prompts import DIAGNOSER_SYSTEM_PROMPT, STRATEGIST_SYSTEM_PROMPT
 
+load_dotenv()
 USE_LIVE_LLM = bool(os.environ.get("GEMINI_API_KEY"))
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest")
 
-
+@retry(
+    retry=retry_if_exception_type(GoogleRateLimitError),
+    wait=wait_exponential(multiplier=2, min=4, max=30), 
+    stop=stop_after_attempt(5)
+)
 def _mock_diagnose(event: NormalizedFailureEvent) -> DiagnoserOutput:
     """Deterministic rule-based fallback, keyed off the same few-shot table."""
     code = event.raw_error_code.lower()
@@ -99,11 +108,12 @@ def _bound_model(output_model):
     back directly -- no manual JSON parsing on our end.
     """
     from langchain_google_genai import ChatGoogleGenerativeAI
-    llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, temperature=0)
+    llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL)
     return llm.with_structured_output(output_model)
 
 
 def _call_llm(system_prompt: str, user_content: str, output_model):
+    time.sleep(4.1)  # Gemini Flash rate limit: 15 requests per minute (4s between calls)
     bound = _bound_model(output_model)
     return bound.invoke([("system", system_prompt), ("human", user_content)])
 

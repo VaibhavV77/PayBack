@@ -1,0 +1,2 @@
+{"audit_id":"c171d6eb","transaction_id":"txn_b1ae3d17a1","node":"ingest","status":"detected","detail":"normalized webhook from razorpay, amount_minor=49900","timestamp":"2026-08-31T18:44:45.496022"}
+{"audit_id":"fb550ff4","transaction_id":"txn_b1ae3d17a1","node":"diagnoser","status":"diagnosing","detail":"Diagnoser started","timestamp":"2026-08-31T18:44:45.501019"}

@@ -13,9 +13,6 @@ FEWSHOT_DIAGNOSIS = [
      "root_cause_category": "network_timeout", "is_recoverable": True},
     {"raw_error_code": "do_not_honor", "raw_error_message": "Card issuer declined without a specific reason.",
      "root_cause_category": "fraud_block", "is_recoverable": False},
-    # deliberately ambiguous: "do_not_honor" is sometimes a soft decline in
-    # disguise (issuer velocity limits) rather than an actual fraud flag -
-    # low confidence is the correct output here, not a confident guess
     {"raw_error_code": "do_not_honor", "raw_error_message": "Transaction declined, contact card issuer.",
      "root_cause_category": "unknown", "is_recoverable": True},
     {"raw_error_code": "session_expired", "raw_error_message": "Checkout session expired after 30 min of inactivity.",

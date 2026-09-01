@@ -1,8 +1,17 @@
-### this file is used to set the allowed actions for each root cause type, and the max retries 
-from schemas import RecoveryPolicy, RootCauseType
-import typing
+"""
+Sole owner of business policy: which actions are allowed per root cause,
+how many retries, and whether human approval is required. This is the
+ONLY place that data lives -- schemas.py defines the RecoveryPolicy shape
+but must never define policy data itself, and nothing else in the graph
+should reach into a raw dict of policies. Everything else imports
+get_policy()/CHANNEL_FOR_ACTION, so swapping this for a DB-backed lookup
+later means editing this file only.
+"""
 
-POLICY_REGISTRY: dict[str, RecoveryPolicy] = {
+import typing
+from schemas import RecoveryPolicy, RootCauseType
+
+_POLICY_REGISTRY: dict[RootCauseType, RecoveryPolicy] = {
     "insufficient_funds": RecoveryPolicy(
         root_cause="insufficient_funds",
         allowed_actions=["send_whatsapp_payment_link", "send_email_payment_link", "silent_gateway_retry"],
@@ -56,7 +65,14 @@ CHANNEL_FOR_ACTION: dict[str, str] = {
     # silent_gateway_retry / escalate_to_human / do_nothing touch no customer channel
 }
 
+
+def get_policy(root_cause: RootCauseType) -> RecoveryPolicy:
+    """The one supported way to read a policy. Raises KeyError loudly
+    rather than letting a caller silently fall through to a default."""
+    return _POLICY_REGISTRY[root_cause]
+
+
 # Fail loudly at import time if a RootCauseType value has no policy.
 _all_root_causes = typing.get_args(RootCauseType)
-_missing = [rc for rc in _all_root_causes if rc not in POLICY_REGISTRY]
-assert not _missing, f"POLICY_REGISTRY missing entries for: {_missing}"
+_missing = [rc for rc in _all_root_causes if rc not in _POLICY_REGISTRY]
+assert not _missing, f"policy registry missing entries for: {_missing}"
