@@ -76,6 +76,42 @@ lookup later without touching graph logic.
   escalation ladder) so the entire pipeline runs offline with zero API
   calls and zero cost, for development and CI-style testing
 
+## Results
+
+These are the results obtained by a running a test batch of size N=50
+
+```code-runner-output
+================================================================
+BATCH RESULT � 50 cases
+================================================================
+Revenue at risk:      256,950.00
+Revenue recovered:    105,488.00
+Recovery rate:        41.1%  (of revenue, i.e. weighted by amount)
+Cases recovered:      12 / 50  (24.0% of cases)
+Cases exhausted:      8
+Cases escalated:      30
+
+root cause            cases  recovered     $ at risk   $ recovered
+------------------------------------------------------------------
+abandoned_checkout        8          0      6,492.00          0.00
+card_expired              9          3     35,491.00     11,497.00
+fraud_block               8          0     39,992.00          0.00
+insufficient_funds       11          3     67,489.00     40,497.00
+mandate_failed            8          1     53,992.00      4,999.00
+network_timeout           6          5     53,494.00     48,495.00
+
+Audit trail: 371 entries written to audit_log.jsonl
+Example � full trail for txn_19ed4bf210:
+  [17:19:40] ingest         detected       normalized webhook from razorpay, amount_minor=49900
+  [17:19:40] diagnoser      diagnosing     Diagnoser started
+  [17:19:48] diagnoser      diagnosing     root_cause=mandate_failed recoverable=True confidence=1.00
+  [17:19:54] strategist     strategizing   attempt=1 action=send_email_payment_link delay=15m
+  [17:19:54] safety_engine  executing      approved action='send_email_payment_link'
+  [17:19:54] executor       executing      attempt=1 action=send_email_payment_link result=still_declined succeeded=False
+  [17:19:54] verify         strategizing   attempt 1 failed, retrying (cap=2)
+  [17:20:10] strategist     strategizing   attempt=2 action=escalate_to_human delay=0m
+  [17:20:10] safety_engine  escalated      strategist requested human escalation for mandate_failed (attempt 2)
+```
 ## Running It
 
 ```bash
